@@ -1,0 +1,18 @@
+src/components/cards/OverlayCard.tsx(4,23): error TS1261: Already included file name 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/ui/badge.tsx' differs from file name 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/ui/Badge.tsx' only in casing.
+  The file is in the program because:
+    Imported via "../ui/badge" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/cards/OverlayCard.tsx'
+    Imported via "../ui/badge" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/cards/BreakingNewsCard.tsx'
+    Imported via "@/components/ui/badge" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/app/design/page.tsx'
+    Imported via "../ui/badge" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/cards/StandardCard.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/tsconfig.json'
+src/components/layout/RightSidebar.tsx(5,24): error TS1261: Already included file name 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/ui/button.tsx' differs from file name 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/ui/Button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/layout/RightSidebar.tsx'
+    Imported via "./button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/ui/ThemeToggle.tsx'
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/layout/Header.tsx'
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/layout/Footer.tsx'
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/cards/BreakingNewsCard.tsx'
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/sections/NewsletterSection.tsx'
+    Imported via "@/components/ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/app/design/page.tsx'
+    Imported via "../ui/button" from file 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/src/components/cards/StandardCard.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/User/Workspace/vectormagazine/website/vectormagazine-frontend/tsconfig.json'
