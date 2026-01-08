@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Header from '@/components/Header';
@@ -82,7 +82,7 @@ function CollapsibleSection({
   );
 }
 
-export default function EditorPage() {
+function EditorContent() {
   const searchParams = useSearchParams();
   const editSlug = searchParams?.get('edit') || searchParams?.get('slug');
   const [showTips, setShowTips] = useState(false);
@@ -435,5 +435,20 @@ export default function EditorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading editor...</p>
+        </div>
+      </div>
+    }>
+      <EditorContent />
+    </Suspense>
   );
 }
