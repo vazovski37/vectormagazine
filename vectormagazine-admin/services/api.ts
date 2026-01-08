@@ -1,6 +1,6 @@
 // Base API configuration
 // Use localhost to match the frontend origin (CORS requires same host naming)
-export const API_BASE_URL = '';
+export const API_BASE_URL = process.env.API_BASE_URL;
 
 // Generic API response type
 export interface ApiResponse<T> {
