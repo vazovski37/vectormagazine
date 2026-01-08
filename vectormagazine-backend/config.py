@@ -30,7 +30,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     # Set CORS_ORIGINS in environment variable as comma-separated list
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://vectormagazine.com').split(',')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://vectormagazine-frontend.vercel.app').split(',')
 
 class TestingConfig(Config):
     """Testing configuration"""
