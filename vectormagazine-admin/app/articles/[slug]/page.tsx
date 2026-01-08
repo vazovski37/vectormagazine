@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ElementType } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -163,7 +163,7 @@ export default function ArticleDetailPage() {
                   );
                 }
                 if (block.type === 'header') {
-                  const HeadingTag = `h${block.data.level}` as keyof JSX.IntrinsicElements;
+                  const HeadingTag = `h${block.data.level}` as ElementType;
                   return (
                     <HeadingTag key={index} className="mb-4 mt-8 font-bold first:mt-0">
                       {block.data.text}

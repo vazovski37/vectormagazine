@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import type { OutputData } from '@editorjs/editorjs';
-import { editorImageUploader } from '@/services/upload';
-import { API_BASE_URL } from '@/services/api';
+import { loadEditorTools } from '@/lib/editorTools';
 
 
 interface EditorProps {
@@ -47,140 +46,18 @@ const Editor = forwardRef<EditorRef, EditorProps>(({ data, onChange, holder, onR
       setIsLoading(true);
       setError(null);
 
-      // Dynamically import Editor.js and tools only on client side
-      const [
-        { default: EditorJS },
-        { default: Header },
-        { default: Paragraph },
-        { default: ImageTool },
-        { default: List },
-        { default: Quote },
-        { default: CodeTool },
-        { default: LinkTool },
-        { default: Marker },
-        { default: InlineCode },
-        { default: Delimiter },
-        { default: Table },
-        { default: SimpleVideo },
-        { default: RawTool },
-      ] = await Promise.all([
-        import('@editorjs/editorjs'),
-        import('@editorjs/header'),
-        import('@editorjs/paragraph'),
-        import('@editorjs/image'),
-        import('@editorjs/list'),
-        import('@editorjs/quote'),
-        import('@editorjs/code'),
-        import('@editorjs/link'),
-        import('@editorjs/marker'),
-        import('@editorjs/inline-code'),
-        import('@editorjs/delimiter'),
-        import('@editorjs/table'),
-        import('simple-video-editorjs'),
-        import('@editorjs/raw'),
-      ]);
-
+      // Dynamically import Editor.js and tools
+      const { EditorJS, tools } = await loadEditorTools();
       const editor = new EditorJS({
         holder: holderId,
         data: initialData || undefined,
-        tools: {
-          paragraph: {
-            class: Paragraph,
-            inlineToolbar: true,
-            config: {
-              placeholder: 'Start writing your article...',
-            },
-          },
-          header: {
-            class: Header,
-            config: {
-              placeholder: 'Enter a header',
-              levels: [1, 2, 3, 4, 5, 6],
-              defaultLevel: 2,
-            },
-            shortcut: 'CMD+SHIFT+H',
-            inlineToolbar: true,
-          },
-          list: {
-            class: List,
-            inlineToolbar: true,
-            config: {
-              defaultStyle: 'unordered',
-            },
-          },
-          quote: {
-            class: Quote,
-            inlineToolbar: true,
-            shortcut: 'CMD+SHIFT+O',
-            config: {
-              quotePlaceholder: 'Enter a quote',
-              captionPlaceholder: 'Quote author',
-            },
-          },
-          code: {
-            class: CodeTool,
-            config: {
-              placeholder: 'Enter code',
-            },
-          },
-          linkTool: {
-            class: LinkTool,
-            config: {
-              endpoint: `${API_BASE_URL}/api/link`,
-            },
-          },
-          image: {
-            class: ImageTool,
-            config: {
-              endpoints: {
-                byFile: `${API_BASE_URL}/api/upload`,
-              },
-              field: 'image',
-              types: 'image/*',
-              captionPlaceholder: 'Add a caption (optional)',
-              buttonContent: 'Click to upload an image',
-              uploader: {
-                uploadByFile: async (file: File) => {
-                  return editorImageUploader(file);
-                },
-              },
-            },
-          },
-          marker: {
-            class: Marker,
-            shortcut: 'CMD+SHIFT+M',
-          },
-          inlineCode: {
-            class: InlineCode,
-            shortcut: 'CMD+SHIFT+C',
-          },
-          delimiter: Delimiter,
-          table: {
-            class: Table,
-            inlineToolbar: true,
-            config: {
-              rows: 2,
-              cols: 2,
-            },
-          },
-          video: {
-            class: SimpleVideo,
-            config: {
-              placeholder: 'Paste a YouTube or Vimeo URL here...',
-            }
-          },
-          raw: {
-            class: RawTool,
-            config: {
-              placeholder: 'Paste HTML code here (e.g., YouTube iframe embed code)...',
-            }
-          },
-        },
-        placeholder: 'Start writing your article...',
+        tools,
+        placeholder: 'Type forward slash / to open menu',
         onChange: async () => {
           if (onChange && editorRef.current && isReadyRef.current) {
             try {
               const outputData = await editorRef.current.save();
+              // Use requestAnimationFrame to avoid blocking the main thread
               requestAnimationFrame(() => {
                 onChange(outputData);
               });
@@ -189,11 +66,27 @@ const Editor = forwardRef<EditorRef, EditorProps>(({ data, onChange, holder, onR
             }
           }
         },
-        autofocus: false,
+        autofocus: true,
         readOnly: false,
         minHeight: 400,
-        // Enable drag and drop (default in Editor.js 2.x, but explicitly set)
-        // Blocks can be dragged by clicking and holding on the left side
+        // Critical: Allow specific attributes for styling to persist
+        sanitizer: {
+          font: {
+            color: true,
+            size: true,
+            style: true,
+          },
+          span: {
+            style: true,
+            class: true,
+          },
+          b: true,
+          i: true,
+          a: {
+            href: true,
+          },
+          p: true,
+        },
       });
 
       // Wait for editor to be ready

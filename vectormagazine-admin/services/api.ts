@@ -36,7 +36,7 @@ export async function fetchApi<T>(
         });
     };
 
-    let token = getAccessToken();
+    const token = getAccessToken();
     let response = await makeRequest(token);
 
     // If 401, try to refresh token and retry
@@ -77,7 +77,7 @@ export async function fetchFormData<T>(
         });
     };
 
-    let token = getAccessToken();
+    const token = getAccessToken();
     let response = await makeRequest(token);
 
     // If 401, try to refresh token and retry
