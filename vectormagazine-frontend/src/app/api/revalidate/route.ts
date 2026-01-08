@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { secret, path, tag, type } = body;
+        const { secret, path, tag, type } = body as { secret?: string; path?: string; tag?: string; type?: string };
 
         // Validate secret token
         const expectedSecret = process.env.REVALIDATION_SECRET || 'vectormagazine-revalidate-secret';
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
 
         // Revalidate by tag (group of pages)
         if (tag) {
-            revalidateTag(tag);
+            // Next.js 16 requires a profile argument (expire: 0 for immediate invalidation)
+            revalidateTag(tag, { expire: 0 });
             console.log(`[ISR] Revalidated tag: ${tag}`);
 
             return NextResponse.json({
