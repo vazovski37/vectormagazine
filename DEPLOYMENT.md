@@ -168,6 +168,17 @@ PassengerPython "/home/YOUR_USERNAME/virtualenv/vectormagazine-backend/3.10/bin/
 - Use that path pattern to fill in `PassengerPython` (ending in `python` instead of `activate`).
 - Use the `/home/user` part for `PassengerAppRoot`.
 
+### 3.4 Troubleshooting Permissions (403/404 Errors)
+If you still see 404s after fixing `.htaccess`, the web server likely cannot read your `repositories` folder due to strict permissions.
+
+Run these commands in the cPanel Terminal:
+```bash
+chmod 755 /home/YOUR_USERNAME/repositories
+chmod 755 /home/YOUR_USERNAME/repositories/vectormagazine
+chmod 755 /home/YOUR_USERNAME/repositories/vectormagazine/vectormagazine-backend
+```
+(Replace `YOUR_USERNAME` with your actual cPanel username).
+
 **Alternative: Edit via Terminal (SSH)**
 If File Manager refuses to show the file:
 1. Open **Terminal** in cPanel.
