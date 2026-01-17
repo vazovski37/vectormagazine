@@ -1,0 +1,2 @@
+Hello from the backend folder!
+If you can see this, the domain is correctly pointing to this folder.
