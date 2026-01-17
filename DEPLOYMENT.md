@@ -147,3 +147,23 @@ Visit `https://yourdomain.com`.
 - **Failure**: 
   - If page loads but no articles: Backend connection failed. Check `NEXT_PUBLIC_API_URL`.
   - If 500/404: Node.js app failed to start. Check cPanel logs.
+
+### 3.3 Troubleshooting Missing .htaccess (Persistent 404)
+If you do not see an `.htaccess` file in your backend folder and restarting the app doesn't create it, create it manually.
+
+1. Create a new file named `.htaccess` in your backend folder.
+2. Paste this content (you **MUST** replace the paths with your actual paths):
+
+```apache
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/YOUR_USERNAME/repositories/vectormagazine/vectormagazine-backend"
+PassengerBaseURI "/"
+PassengerPython "/home/YOUR_USERNAME/virtualenv/vectormagazine-backend/3.10/bin/python"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+```
+
+**Where to find the paths?**
+- Look at the "Enter to the virtual environment" command in the Python App Setup page. 
+- It looks like `source /home/user/virtualenv/.../bin/activate`.
+- Use that path pattern to fill in `PassengerPython` (ending in `python` instead of `activate`).
+- Use the `/home/user` part for `PassengerAppRoot`.
