@@ -1,11 +1,11 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import JSONB, ARRAY
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Index
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Index, JSON
 from sqlalchemy.orm import relationship
 import enum
 
 db = SQLAlchemy()
+
 
 class ArticleStatus(enum.Enum):
     """Article status enumeration"""
@@ -102,14 +102,14 @@ class Article(db.Model):
     title = Column(String(500), nullable=False)
     subtitle = Column(String(500), nullable=True)  # excerpt
     description = Column(String(1000), nullable=True)  # Keep for backward compatibility
-    content = Column(JSONB, nullable=True)  # Stores Editor.js output blocks
+    content = Column(JSON, nullable=True)  # Stores Editor.js output blocks
     cover_image = Column(String(500), nullable=True)
     read_time = Column(Integer, nullable=True)  # minutes
     published_at = Column(DateTime, nullable=True)
     
     # Organization
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
-    tags = Column(ARRAY(String), nullable=True)  # Array of tag strings
+    tags = Column(JSON, nullable=True)  # Array of tag strings stored as JSON
     slug = Column(String(500), nullable=False, unique=True, index=True)
     
     # SEO and Social Media
@@ -166,6 +166,27 @@ class Article(db.Model):
 
     def __repr__(self):
         return f'<Article {self.id}: {self.title}>'
+
+
+class Subscriber(db.Model):
+    """Newsletter subscriber"""
+    __tablename__ = 'subscribers'
+    
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    is_active = Column(db.Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    def __repr__(self):
+        return f'<Subscriber {self.id}: {self.email}>'
 
 
 

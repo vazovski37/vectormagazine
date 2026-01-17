@@ -22,6 +22,8 @@ export const loadEditorTools = async () => {
         FontSizeModule,
         AlignmentTuneModule,
         SpacerModule,
+        ColumnsModule,
+        ImageTuneModule,
     ] = await Promise.all([
         import('@editorjs/editorjs'),
         import('@editorjs/header'),
@@ -49,6 +51,9 @@ export const loadEditorTools = async () => {
             return null;
         }),
         import('@/components/editor-tools/Spacer'),
+        // @ts-ignore
+        import('@calumk/editorjs-columns'),
+        import('@/components/editor-tools/ImageTune'),
     ]);
 
     const EditorJS = safeImport(EditorJSModule, 'EditorJS');
@@ -68,6 +73,8 @@ export const loadEditorTools = async () => {
     const ColorPlugin = safeImport(ColorPluginModule, 'ColorPlugin');
     const AlignmentTune = safeImport(AlignmentTuneModule, 'AlignmentTune');
     const Spacer = safeImport(SpacerModule, 'Spacer');
+    const Columns = safeImport(ColumnsModule, 'Columns');
+    const ImageTune = safeImport(ImageTuneModule, 'ImageTune');
 
     // Special handling for FontSize which uses a named export
     // @ts-ignore
@@ -136,6 +143,7 @@ export const loadEditorTools = async () => {
         } : undefined,
         image: ImageTool ? {
             class: ImageTool as any,
+            tunes: ImageTune ? ['imageTune'] : [], // Add custom resizing tune
             config: {
                 endpoints: {
                     byFile: `${API_BASE_URL}/api/upload`,
@@ -210,6 +218,32 @@ export const loadEditorTools = async () => {
             },
         } : undefined,
         spacer: Spacer ? Spacer : undefined,
+        // Columns Tool Configuration
+        columns: Columns ? {
+            class: Columns as any,
+            config: {
+                EditorJsLibrary: EditorJS, // Pass EditorJS class for nested editors
+                tools: {
+                    paragraph: Paragraph ? { class: Paragraph } : undefined,
+                    header: Header ? { class: Header } : undefined,
+                    image: ImageTool ? {
+                        class: ImageTool,
+                        config: {
+                            endpoints: {
+                                byFile: `${API_BASE_URL}/api/upload`,
+                            },
+                            uploader: {
+                                uploadByFile: async (file: File) => {
+                                    return editorImageUploader(file);
+                                },
+                            },
+                        }
+                    } : undefined,
+                    list: List ? { class: List } : undefined,
+                }
+            }
+        } : undefined,
+        imageTune: ImageTune ? ImageTune : undefined,
     };
 
     return { EditorJS, tools };

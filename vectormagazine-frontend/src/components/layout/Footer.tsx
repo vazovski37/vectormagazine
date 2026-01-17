@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Facebook, Twitter, Instagram } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 const footerLinks = [
   { label: "Privacy Policy", href: "#" },
@@ -48,6 +52,40 @@ const Pinterest = ({ size = 18 }: { size?: number }) => (
 );
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsLoading(true);
+    setMessage("");
+    setIsError(false);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || "Failed to subscribe");
+
+      setMessage(data.message || "Subscribed successfully!");
+      setEmail("");
+    } catch (error: any) {
+      setIsError(true);
+      setMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <footer className="bg-muted text-foreground overflow-hidden font-sans border-t border-border">
 
@@ -172,25 +210,40 @@ export default function Footer() {
             </div>
 
             {/* Input Field with Button */}
-            <div className="relative group max-w-sm">
+            <form onSubmit={handleSubscribe} className="relative group max-w-sm">
               <Input
                 type="email"
                 placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                required
                 className="w-full bg-transparent border-t-0 border-x-0 border-b border-border py-6 pr-32 text-sm text-foreground placeholder:text-muted-foreground rounded-none focus-visible:ring-0 focus-visible:border-primary transition-colors pl-0"
               />
               <Button
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-primary hover:bg-foreground hover:text-background text-primary-foreground text-[10px] font-bold uppercase tracking-widest rounded-full h-8 px-6"
+                type="submit"
+                disabled={isLoading}
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-primary hover:bg-foreground hover:text-background text-primary-foreground text-[10px] font-bold uppercase tracking-widest rounded-full h-8 px-6 disabled:opacity-50"
               >
-                Subscribe
+                {isLoading ? 'Wait...' : 'Subscribe'}
               </Button>
-            </div>
+            </form>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              I consent to receive newsletter via email. For further information, please review our{" "}
-              <Link href="#" className="text-foreground hover:text-primary transition-colors underline decoration-border underline-offset-4">
-                Privacy Policy
-              </Link>
-            </p>
+            <div className="min-h-[20px]">
+              {message && (
+                <p className={`text-xs ${isError ? 'text-red-500' : 'text-green-500'}`}>
+                  {message}
+                </p>
+              )}
+              {!message && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  I consent to receive newsletter via email. for further information, please review our{" "}
+                  <Link href="#" className="text-foreground hover:text-primary transition-colors underline decoration-border underline-offset-4">
+                    Privacy Policy
+                  </Link>
+                </p>
+              )}
+            </div>
           </div>
 
         </div>

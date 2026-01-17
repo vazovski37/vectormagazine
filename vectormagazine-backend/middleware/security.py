@@ -50,15 +50,32 @@ class SecurityConfig:
     }
     
     # CSP header (more restrictive for production)
-    CSP_POLICY = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https: blob:; "
-        "font-src 'self' data:; "
-        "connect-src 'self' http://localhost:* http://127.0.0.1:*; "
-        "frame-ancestors 'self';"
-    )
+    # We will generate this dynamically in get_csp_policy()
+    
+    @staticmethod
+    def get_csp_policy():
+        """Generate CSP policy dynamically"""
+        # Get allowed origins from env or default to generic
+        frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+        admin_url = os.environ.get('ADMIN_URL', 'http://localhost:3001')
+        
+        # Parse domains for clean csp
+        allowed_connect = f"'self' {frontend_url} {admin_url}"
+        
+        # Add any extra CORS origins
+        cors_origins = os.environ.get('CORS_ORIGINS', '')
+        if cors_origins:
+            allowed_connect += f" {cors_origins.replace(',', ' ')}"
+            
+        return (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https: blob:; "
+            "font-src 'self' data:; "
+            f"connect-src {allowed_connect}; "
+            "frame-ancestors 'self';"
+        )
 
 
 def add_security_headers(response):
@@ -67,7 +84,7 @@ def add_security_headers(response):
         response.headers[header] = value
     
     # Add CSP header
-    response.headers['Content-Security-Policy'] = SecurityConfig.CSP_POLICY
+    response.headers['Content-Security-Policy'] = SecurityConfig.get_csp_policy()
     
     return response
 
@@ -197,8 +214,13 @@ def sanitize_content_blocks(content):
             
         block_type = block.get('type')
         block_data = block.get('data', {})
+        block_tunes = block.get('tunes', {})
         
         sanitized_block = {'type': block_type, 'data': {}}
+        
+        # Preserve tunes data (needed for layout, image resizing, etc)
+        if block_tunes:
+            sanitized_block['tunes'] = block_tunes
         
         # Sanitize based on block type
         if block_type in ['paragraph', 'header', 'quote']:

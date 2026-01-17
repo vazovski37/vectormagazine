@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: true, // Disable optimization to allow local images (127.0.0.1)
+    // PROFDUCTION NOTE: Add your production domain to the remotePatterns list below if you use optimized images
+    // e.g. { protocol: 'https', hostname: 'yourdomain.com' }
     remotePatterns: [
       {
         protocol: "https",

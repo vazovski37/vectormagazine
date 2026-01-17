@@ -5,7 +5,7 @@ import requests
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app, make_response
 from werkzeug.utils import secure_filename
-from models import db, Article, Category, ArticleStatus
+from models import db, Article, Category, ArticleStatus, Subscriber
 from auth import require_auth
 from middleware.security import (
     validate_article_input, 
@@ -46,22 +46,25 @@ def trigger_revalidation(article_slug=None, revalidate_home=True):
                 'path': path
             }
             
-            response = requests.post(
-                revalidation_url, 
-                json=payload,
-                headers=headers,
-                timeout=5  # 5 second timeout
-            )
-            
-            if response.status_code == 200:
-                current_app.logger.info(f'[ISR] Revalidated: {path}')
-            else:
-                current_app.logger.warning(f'[ISR] Failed to revalidate {path}: {response.status_code}')
+            try:
+                response = requests.post(
+                    revalidation_url, 
+                    json=payload,
+                    headers=headers,
+                    timeout=5  # 5 second timeout
+                )
                 
-    except requests.exceptions.RequestException as e:
-        # Don't fail the main request if revalidation fails
-        current_app.logger.warning(f'[ISR] Revalidation request failed: {str(e)}')
+                if response.status_code == 200:
+                    current_app.logger.info(f'[ISR] Successfully revalidated: {path}')
+                else:
+                    current_app.logger.warning(f'[ISR] Failed to revalidate {path}: {response.status_code} - {response.text}')
+            except requests.exceptions.Timeout:
+                current_app.logger.warning(f'[ISR] Timeout revalidating {path}')
+            except requests.exceptions.ConnectionError:
+                current_app.logger.warning(f'[ISR] Connection error revalidating {path} - Frontend may not be running')
+                
     except Exception as e:
+        # Don't fail the main request if revalidation fails
         current_app.logger.warning(f'[ISR] Unexpected error during revalidation: {str(e)}')
 
 
@@ -569,3 +572,50 @@ def upload_file():
             'success': 0,
             'error': {'message': 'Failed to upload file', 'details': str(e)}
         }), 500
+
+
+@api.route('/subscribe', methods=['POST'])
+def subscribe():
+    """Subscribe to newsletter"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+            
+        # Basic email validation
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return jsonify({'error': 'Invalid email format'}), 400
+            
+        # Check if already subscribed
+        existing = Subscriber.query.filter_by(email=email).first()
+        if existing:
+            if not existing.is_active:
+                existing.is_active = True
+                db.session.commit()
+                return jsonify({'message': 'Welcome back! You have been resubscribed.'}), 200
+            return jsonify({'message': 'You are already subscribed!'}), 200
+            
+        subscriber = Subscriber(email=email)
+        db.session.add(subscriber)
+        db.session.commit()
+        
+        return jsonify({'message': 'Successfully subscribed to newsletter!'}), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error subscribing: {str(e)}')
+        return jsonify({'error': 'Failed to subscribe', 'message': str(e)}), 500
+
+
+@api.route('/subscribers', methods=['GET'])
+@require_auth
+def list_subscribers():
+    """List all subscribers (requires authentication)"""
+    try:
+        subscribers = Subscriber.query.order_by(Subscriber.created_at.desc()).all()
+        return jsonify([sub.to_dict() for sub in subscribers]), 200
+    except Exception as e:
+        current_app.logger.error(f'Error listing subscribers: {str(e)}')
+        return jsonify({'error': 'Failed to fetch subscribers', 'message': str(e)}), 500

@@ -155,7 +155,9 @@ const Editor = forwardRef<EditorRef, EditorProps>(({ data, onChange, holder, onR
       if (!editorRef.current || !isReadyRef.current) {
         throw new Error('Editor is not initialized or ready');
       }
-      return await editorRef.current.save();
+      const outputData = await editorRef.current.save();
+      console.log('Editor.js Save Output:', JSON.stringify(outputData, null, 2));
+      return outputData;
     },
     clear: () => {
       if (editorRef.current && isReadyRef.current) {
