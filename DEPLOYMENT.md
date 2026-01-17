@@ -167,3 +167,11 @@ PassengerPython "/home/YOUR_USERNAME/virtualenv/vectormagazine-backend/3.10/bin/
 - It looks like `source /home/user/virtualenv/.../bin/activate`.
 - Use that path pattern to fill in `PassengerPython` (ending in `python` instead of `activate`).
 - Use the `/home/user` part for `PassengerAppRoot`.
+
+**Alternative: Edit via Terminal (SSH)**
+If File Manager refuses to show the file:
+1. Open **Terminal** in cPanel.
+2. Navigate to the folder: `cd repositories/vectormagazine/vectormagazine-backend`
+3. Edit the file using nano: `nano .htaccess`
+4. Paste the content (Right-click -> Paste).
+5. Save: Press `Ctrl+O`, `Enter`, then `Ctrl+X`.
