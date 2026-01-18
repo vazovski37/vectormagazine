@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Optimize builds for low-memory environments
-  swcMinify: false,
   poweredByHeader: false,
   compress: true,
 
