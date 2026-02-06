@@ -60,11 +60,12 @@ export async function POST(request: NextRequest) {
             // Revalidate homepage and articles listing
             revalidatePath('/');
             revalidatePath('/articles');
-            console.log('[ISR] Revalidated homepage and articles listing');
+            revalidatePath('/sitemap.xml'); // Revalidate sitemap to show new/updated URLs
+            console.log('[ISR] Revalidated homepage, articles listing, and sitemap');
 
             return NextResponse.json({
                 revalidated: true,
-                paths: ['/', '/articles'],
+                paths: ['/', '/articles', '/sitemap.xml'],
                 timestamp: Date.now()
             });
         }

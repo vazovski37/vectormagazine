@@ -1,6 +1,6 @@
 // Base API configuration
-// Use localhost to match the frontend origin (CORS requires same host naming)
-export const API_BASE_URL = '';
+// Use environment variable for production, fallback to empty string (same-origin) for localhost/proxy
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 // Generic API response type
 export interface ApiResponse<T> {
@@ -96,3 +96,10 @@ export async function fetchFormData<T>(
     return response.json();
 }
 
+
+export const api = {
+    get: <T>(endpoint: string, options?: RequestInit) => fetchApi<T>(endpoint, { method: 'GET', ...options }),
+    post: <T>(endpoint: string, data: any, options?: RequestInit) => fetchApi<T>(endpoint, { method: 'POST', body: JSON.stringify(data), ...options }),
+    put: <T>(endpoint: string, data: any, options?: RequestInit) => fetchApi<T>(endpoint, { method: 'PUT', body: JSON.stringify(data), ...options }),
+    delete: <T>(endpoint: string, options?: RequestInit) => fetchApi<T>(endpoint, { method: 'DELETE', ...options }),
+};

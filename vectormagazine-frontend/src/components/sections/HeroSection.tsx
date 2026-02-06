@@ -22,12 +22,22 @@ const fallbackLatestPosts: Post[] = [
     { id: 7, title: "The Best Productivity Hacks You've Never Heard", category: "Adventures", imageSrc: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=800", date: "1 year ago", slug: "productivity-hacks" },
 ];
 
-export default function HeroSection() {
-    const [heroPosts, setHeroPosts] = useState<Post[]>(fallbackHeroPosts);
-    const [latestPosts, setLatestPosts] = useState<Post[]>(fallbackLatestPosts);
-    const [isLoading, setIsLoading] = useState(true);
+interface HeroSectionProps {
+    initialHeroPosts?: Post[];
+    initialLatestPosts?: Post[];
+}
+
+export default function HeroSection({ initialHeroPosts = [], initialLatestPosts = [] }: HeroSectionProps) {
+    const [heroPosts, setHeroPosts] = useState<Post[]>(initialHeroPosts.length > 0 ? initialHeroPosts : fallbackHeroPosts);
+    const [latestPosts, setLatestPosts] = useState<Post[]>(initialLatestPosts.length > 0 ? initialLatestPosts : fallbackLatestPosts);
+    const [isLoading, setIsLoading] = useState(initialHeroPosts.length === 0);
 
     useEffect(() => {
+        // If we have initial data, we don't need to fetch
+        if (initialHeroPosts.length > 0) {
+            return;
+        }
+
         async function fetchData() {
             try {
                 const articles = await getPublishedArticles();
@@ -44,7 +54,7 @@ export default function HeroSection() {
             }
         }
         fetchData();
-    }, []);
+    }, [initialHeroPosts.length]);
 
     return (
         <section className="py-8 pb-16">

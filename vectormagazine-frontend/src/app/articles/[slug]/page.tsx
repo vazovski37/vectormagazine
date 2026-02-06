@@ -1,4 +1,5 @@
 import { getArticleBySlug, getPublishedArticles } from '@/lib/api';
+import { ArticleBlockRenderer } from '@/components/ArticleBlockRenderer';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -119,106 +120,9 @@ export default async function ArticlePage({ params }: Props) {
 
                     {/* Article Content */}
                     <article className="prose prose-lg dark:prose-invert max-w-none">
-                        {article.content?.blocks?.map((block: any, index: number) => {
-                            switch (block.type) {
-                                case 'paragraph':
-                                    return (
-                                        <p key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />
-                                    );
-
-                                case 'header':
-                                    const level = block.data.level || 2;
-                                    if (level === 1) return <h1 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-                                    if (level === 2) return <h2 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-                                    if (level === 3) return <h3 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-                                    if (level === 4) return <h4 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-                                    if (level === 5) return <h5 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-                                    return <h6 key={index} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
-
-                                case 'image':
-                                    return (
-                                        <figure key={index} className="my-8">
-                                            <img
-                                                src={block.data.file?.url || block.data.url}
-                                                alt={block.data.caption || ''}
-                                                className="w-full rounded-lg"
-                                            />
-                                            {block.data.caption && (
-                                                <figcaption className="text-center text-sm text-muted-foreground mt-2">
-                                                    {block.data.caption}
-                                                </figcaption>
-                                            )}
-                                        </figure>
-                                    );
-
-                                case 'list':
-                                    const ListTag = block.data.style === 'ordered' ? 'ol' : 'ul';
-                                    return (
-                                        <ListTag key={index}>
-                                            {block.data.items.map((item: string, i: number) => (
-                                                <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
-                                            ))}
-                                        </ListTag>
-                                    );
-
-                                case 'quote':
-                                    return (
-                                        <blockquote key={index}>
-                                            <p dangerouslySetInnerHTML={{ __html: block.data.text }} />
-                                            {block.data.caption && (
-                                                <cite>— {block.data.caption}</cite>
-                                            )}
-                                        </blockquote>
-                                    );
-
-                                case 'code':
-                                    return (
-                                        <pre key={index} className="overflow-x-auto">
-                                            <code>{block.data.code}</code>
-                                        </pre>
-                                    );
-
-                                case 'raw':
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="my-6"
-                                            dangerouslySetInnerHTML={{ __html: block.data.html }}
-                                        />
-                                    );
-
-                                case 'delimiter':
-                                    return (
-                                        <div key={index} className="my-12 flex justify-center">
-                                            <span className="text-2xl text-muted-foreground">* * *</span>
-                                        </div>
-                                    );
-
-                                case 'table':
-                                    return (
-                                        <div key={index} className="my-6 overflow-x-auto">
-                                            <table className="w-full">
-                                                <tbody>
-                                                    {block.data.content.map((row: string[], rowIndex: number) => (
-                                                        <tr key={rowIndex}>
-                                                            {row.map((cell: string, cellIndex: number) => (
-                                                                <td
-                                                                    key={cellIndex}
-                                                                    dangerouslySetInnerHTML={{ __html: cell }}
-                                                                    className="border px-4 py-2"
-                                                                />
-                                                            ))}
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    );
-
-                                default:
-                                    return null;
-                            }
-                        })}
+                        {article.content?.blocks?.map((block: any, index: number) => (
+                            <ArticleBlockRenderer key={block.id || index} block={block} />
+                        ))}
                     </article>
                 </Container>
             </main>

@@ -1,50 +1,84 @@
 import os
-from datetime import timedelta
 
 class Config:
-    """Base configuration class"""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://postgres:fgh123fgh@localhost:5432/vectormagazine'
+    """Base configuration"""
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_key_vector_magazine_2024')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
-    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB max file size for videos
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'webm', 'mov', 'avi'}
-    ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
+    
+    # Upload Configuration
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max limit
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov', 'avi'}
     
-    # Cache settings
-    CACHE_DEFAULT_TIMEOUT = 60  # 60 seconds
-    
-    # Pagination defaults
+    # Pagination
     DEFAULT_PAGE_SIZE = 20
     MAX_PAGE_SIZE = 100
+    
+    # CORS
+    CORS_HEADERS = 'Content-Type'
+    
+    @staticmethod
+    def init_app(app):
+        pass
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
-    # Note: Cannot use '*' when credentials are enabled - must use specific origins
-    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001']
+    
+    # Use DEV_ prefixed variables, fallback to non-prefixed
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app.db')
+    
+    SECRET_KEY = os.environ.get('DEV_SECRET_KEY') or os.environ.get('SECRET_KEY', 'dev_key_vector_magazine_2024')
+    FRONTEND_URL = os.environ.get('DEV_FRONTEND_URL', 'http://localhost:3000')
+    ADMIN_URL = os.environ.get('DEV_ADMIN_URL', 'http://localhost:3001')
+    REVALIDATION_SECRET = os.environ.get('DEV_REVALIDATION_SECRET', 'vectormagazine-revalidate-secret-dev')
+    
+    # Cookie security - relaxed for development
+    SESSION_COOKIE_SECURE = False
+    REMEMBER_COOKIE_SECURE = False
+
 
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
-    # Set CORS_ORIGINS in environment variable as comma-separated list
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://vectormagazine.com').split(',')
+    
+    # Use PROD_ prefixed variables, fallback to non-prefixed
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or os.environ.get('DATABASE_URL')
+    SECRET_KEY = os.environ.get('PROD_SECRET_KEY') or os.environ.get('SECRET_KEY')
+    FRONTEND_URL = os.environ.get('PROD_FRONTEND_URL', 'https://vectormagazine.com')
+    ADMIN_URL = os.environ.get('PROD_ADMIN_URL', 'https://admin.vectormagazine.com')
+    REVALIDATION_SECRET = os.environ.get('PROD_REVALIDATION_SECRET')
+    
+    # Cookie security - strict for production
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    
+    @property
+    def CORS_ORIGINS(self):
+        origins = os.environ.get('PROD_CORS_ORIGINS') or os.environ.get('CORS_ORIGINS')
+        if not origins:
+            return ['https://vectormagazine.com', 'https://admin.vectormagazine.com']
+        return [o.strip() for o in origins.split(',')]
+    
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
+        
+        # Log to stderr in production
+        import logging
+        from logging import StreamHandler
+        file_handler = StreamHandler()
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
 
-class TestingConfig(Config):
-    """Testing configuration"""
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
 
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'testing': TestingConfig,
     'default': DevelopmentConfig
 }
-
-
-
-
-

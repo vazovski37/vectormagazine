@@ -48,13 +48,38 @@ export interface Post {
     slug: string;
 }
 
+// Helper to normalize image URLs from backend
+function normalizeImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) {
+        return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800';
+    }
+
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+
+    // Check if the URL contains /static/
+    const staticIndex = imageUrl.indexOf('/static/');
+    if (staticIndex !== -1) {
+        // Strip everything before /static/ and prepend the correct backend URL
+        const relativePath = imageUrl.substring(staticIndex);
+        return `${backendUrl}${relativePath}`;
+    }
+
+    // If it's already a full URL (and doesn't contain /static/ which we handled above), return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+    }
+
+    // If it's any other relative path, prepend backend URL
+    return `${backendUrl}${imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`}`;
+}
+
 // Transform Article to Post format for cards
 export function articleToPost(article: Article): Post {
     return {
         id: article.id,
         title: article.title,
         category: article.category?.name || 'Uncategorized',
-        imageSrc: article.cover_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800',
+        imageSrc: normalizeImageUrl(article.cover_image),
         date: formatRelativeDate(article.created_at),
         slug: article.slug,
     };

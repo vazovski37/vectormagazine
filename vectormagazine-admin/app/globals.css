@@ -313,8 +313,20 @@ body {
 }
 
 /* Placeholder specific color */
-.ce-paragraph[data-placeholder]:empty::before,
 .ce-header[data-placeholder]:empty::before {
   color: hsl(var(--muted-foreground));
   opacity: 0.5;
+}
+
+/* Responsive Columns for Editor.js */
+@media (max-width: 650px) {
+  .ce-editorjs-columns_col {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    margin-bottom: 1em;
+  }
+
+  .ce-editorjs-columns_row {
+    flex-wrap: wrap !important;
+  }
 }

@@ -38,6 +38,12 @@ export default function Header() {
             >
               Categories
             </Link>
+            <Link
+              href="/subscribers"
+              className="text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors"
+            >
+              Subscribers
+            </Link>
           </nav>
         </div>
 

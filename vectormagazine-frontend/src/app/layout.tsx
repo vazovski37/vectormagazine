@@ -18,8 +18,45 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MOW Creative Magazine",
-  description: "A creative magazine template.",
+  title: {
+    default: "MOW Creative Magazine",
+    template: "%s | MOW Creative Magazine",
+  },
+  description: "A creative magazine template for modern storytelling.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://vectormagazine.com'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'MOW Creative Magazine',
+    title: 'MOW Creative Magazine',
+    description: 'A creative magazine template for modern storytelling.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'MOW Creative Magazine',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MOW Creative Magazine',
+    description: 'A creative magazine template for modern storytelling.',
+    images: ['/og-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({

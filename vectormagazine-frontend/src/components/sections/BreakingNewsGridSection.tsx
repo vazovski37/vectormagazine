@@ -16,10 +16,19 @@ const fallbackPosts: Post[] = [
     { id: 5, title: "How Breaks Help You Accomplish More Every Day", category: "Lifestyle", imageSrc: "https://images.unsplash.com/photo-1481437156560-3205f6a55735?q=80&w=800", date: "1 year ago", slug: "breaks-help" },
 ];
 
-export default function BreakingNewsGridSection() {
-    const [posts, setPosts] = useState<Post[]>(fallbackPosts);
+interface BreakingNewsGridSectionProps {
+    initialPosts?: Post[];
+}
+
+export default function BreakingNewsGridSection({ initialPosts = [] }: BreakingNewsGridSectionProps) {
+    const [posts, setPosts] = useState<Post[]>(initialPosts.length > 0 ? initialPosts : fallbackPosts);
 
     useEffect(() => {
+        // If we have initial data, we don't need to fetch
+        if (initialPosts.length > 0) {
+            return;
+        }
+
         async function fetchData() {
             try {
                 const articles = await getBreakingNews(5);
@@ -31,7 +40,7 @@ export default function BreakingNewsGridSection() {
             }
         }
         fetchData();
-    }, []);
+    }, [initialPosts.length]);
 
     // Triple the posts for seamless looping animation
     const repeatedPosts = [...posts, ...posts, ...posts];
