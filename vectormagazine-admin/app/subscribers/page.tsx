@@ -4,12 +4,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 
-interface Subscriber {
-    id: number;
-    email: string;
-    is_active: boolean;
-    created_at: string;
-}
+import { Subscriber, SubscribersResponse } from '@/types/subscriber';
 
 export default function SubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -22,8 +17,8 @@ export default function SubscribersPage() {
 
     const fetchSubscribers = async () => {
         try {
-            const data = await api.get<Subscriber[]>('/api/subscribers');
-            setSubscribers(data);
+            const data = await api.get<SubscribersResponse>('/api/subscribers');
+            setSubscribers(data.subscribers);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch subscribers');
         } finally {

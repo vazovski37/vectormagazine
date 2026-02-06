@@ -1,31 +1,20 @@
 import { fetchApi } from './api';
+import { API_ENDPOINTS } from './endpoints';
 
 // Types
-export interface Category {
-    id: number;
-    name: string;
-    slug: string;
-    description: string | null;
-    created_at: string;
-}
-
-export interface CreateCategoryData {
-    name: string;
-    slug?: string;
-    description?: string | null;
-}
+import { Category, CreateCategoryData } from '@/types/category';
 
 // API Functions
 export async function getCategories(): Promise<Category[]> {
-    return fetchApi<Category[]>('/api/categories');
+    return fetchApi<Category[]>(API_ENDPOINTS.CATEGORIES.BASE);
 }
 
 export async function getCategoryById(id: number): Promise<Category> {
-    return fetchApi<Category>(`/api/categories/${id}`);
+    return fetchApi<Category>(API_ENDPOINTS.CATEGORIES.BY_ID(id));
 }
 
 export async function createCategory(data: CreateCategoryData): Promise<Category> {
-    return fetchApi<Category>('/api/categories', {
+    return fetchApi<Category>(API_ENDPOINTS.CATEGORIES.BASE, {
         method: 'POST',
         body: JSON.stringify(data),
     });

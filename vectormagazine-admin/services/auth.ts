@@ -2,27 +2,10 @@
 // Handles login, logout, token refresh, and user state
 
 import { API_BASE_URL } from './api';
+import { API_ENDPOINTS } from './endpoints';
 
 // Types
-export interface User {
-    id: number;
-    email: string;
-    name: string;
-    role: 'admin' | 'editor' | 'viewer';
-    is_active: boolean;
-    created_at: string;
-    last_login: string | null;
-}
-
-export interface LoginResponse {
-    access_token: string;
-    user: User;
-    expires_in: number;
-}
-
-export interface AuthError {
-    error: string;
-}
+import { User, LoginResponse, AuthError } from '@/types/auth';
 
 // Token storage (memory only - more secure than localStorage)
 let accessToken: string | null = null;
@@ -58,7 +41,7 @@ export function isAuthenticated(): boolean {
 
 // Login
 export async function login(email: string, password: string): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.LOGIN}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -81,7 +64,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
 // Logout
 export async function logout(): Promise<void> {
     try {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.LOGOUT}`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -94,7 +77,7 @@ export async function logout(): Promise<void> {
 // Refresh access token using HTTP-only cookie
 export async function refreshToken(): Promise<boolean> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -123,7 +106,7 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.ME}`, {
             headers: {
                 'Authorization': `Bearer ${getAccessToken()}`,
             },
@@ -150,7 +133,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // Change password
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.CHANGE_PASSWORD}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

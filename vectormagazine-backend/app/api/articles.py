@@ -1,12 +1,10 @@
-from flask import Blueprint, request, jsonify, current_app, send_from_directory
-from werkzeug.utils import secure_filename
-from models import db, Article, Category, ArticleStatus
-import os
-import uuid
-from datetime import datetime
+from flask import Blueprint, request, jsonify, current_app
+from app import db
+from app.models import Article, Category, ArticleStatus
+from app.services.isr_service import ISRService
 import re
 
-api = Blueprint('api', __name__, url_prefix='/api')
+bp = Blueprint('articles', __name__)
 
 def generate_slug(title, article_id=None):
     slug = title.lower()
@@ -30,7 +28,7 @@ def generate_slug(title, article_id=None):
         counter += 1
     return slug
 
-@api.route('/articles', methods=['GET'])
+@bp.route('/', methods=['GET'])
 def get_articles():
     page = request.args.get('page', 1, type=int)
     per_page = current_app.config.get('DEFAULT_PAGE_SIZE', 20)
@@ -50,7 +48,8 @@ def get_articles():
             'subtitle': article.subtitle,
             'category': {'name': article.category.name, 'slug': article.category.slug} if article.category else None,
             'read_time': article.read_time,
-            'published_at': article.published_at.isoformat() if article.published_at else None
+            'published_at': article.published_at.isoformat() if article.published_at else None,
+            'status': article.status.value
         })
         
     return jsonify({
@@ -60,7 +59,7 @@ def get_articles():
         'current_page': page
     })
 
-@api.route('/articles/<slug_or_id>', methods=['GET'])
+@bp.route('/<slug_or_id>', methods=['GET'])
 def get_article(slug_or_id):
     # Try ID first if integer
     article = None
@@ -94,7 +93,7 @@ def get_article(slug_or_id):
         'views_count': article.views_count
     })
 
-@api.route('/articles', methods=['POST'])
+@bp.route('/', methods=['POST'])
 def create_article():
     data = request.json
     
@@ -118,40 +117,73 @@ def create_article():
     db.session.add(article)
     db.session.commit()
     
+    # Trigger ISR
+    ISRService.revalidate(f"/articles/{article.slug}")
+    ISRService.revalidate("/") # Revalidate homepage
+    
     return jsonify({'id': article.id, 'slug': article.slug, 'message': 'Article created'}), 201
 
-@api.route('/upload', methods=['POST'])
-def upload_file():
-    if 'image' not in request.files:
-        return jsonify({'success': 0, 'error': 'No file part'}), 400
-        
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({'success': 0, 'error': 'No selected file'}), 400
-        
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        # Add uuid to prevent overwrites
-        name, ext = os.path.splitext(filename)
-        filename = f"{name}_{uuid.uuid4().hex[:8]}{ext}"
-        
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        file.save(os.path.join(upload_folder, filename))
-        
-        url = f"{request.host_url}static/uploads/{filename}"
-        
-        return jsonify({
-            'success': 1,
-            'file': {
-                'url': url
-            }
-        })
-        
-    return jsonify({'success': 0, 'error': 'File type not allowed'}), 400
+@bp.route('/slug/<slug>', methods=['GET'])
+def get_article_by_slug_route(slug):
+    """Explicit endpoint for fetching by slug"""
+    return get_article(slug)
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+@bp.route('/<int:id>', methods=['PUT'])
+def update_article(id):
+    article = Article.query.get_or_404(id)
+    data = request.json
+    
+    if 'title' in data:
+        article.title = data['title']
+        if not data.get('slug'): # Update slug if title changes but no slug provided? usually strict
+            # For now, keep slug unless explicitly changed to avoid breaking URLs
+            pass
+            
+    if 'slug' in data:
+        article.slug = data['slug'] 
+        
+    if 'description' in data:
+        article.description = data['description']
+    if 'content' in data:
+        article.content = data['content']
+    if 'cover_image' in data:
+        article.cover_image = data['cover_image']
+    if 'subtitle' in data:
+        article.subtitle = data['subtitle']
+    if 'meta_title' in data:
+        article.meta_title = data['meta_title']
+    if 'meta_description' in data:
+        article.meta_description = data['meta_description']
+    if 'status' in data:
+        # Handle status conversion
+        status_val = data['status'].upper()
+        if status_val in ArticleStatus.__members__:
+            article.status = ArticleStatus[status_val]
+            
+    if 'category_id' in data:
+        article.category_id = data['category_id']
+        
+    if 'tags' in data:
+        article.tags = data['tags']
+        
+    db.session.commit()
+    
+    # Trigger ISR
+    ISRService.revalidate(f"/articles/{article.slug}")
+    ISRService.revalidate("/")
+    
+    return jsonify({'message': 'Article updated', 'article': {
+        'id': article.id,
+        'slug': article.slug
+    }})
 
+@bp.route('/<int:id>', methods=['DELETE'])
+def delete_article(id):
+    article = Article.query.get_or_404(id)
+    db.session.delete(article)
+    db.session.commit()
+    
+    # Optional: ISR revalidate to remove from frontend?
+    ISRService.revalidate("/")
+    
+    return jsonify({'message': 'Article deleted'})

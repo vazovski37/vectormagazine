@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Category,
-    CreateCategoryData,
     getCategories,
     createCategory as createCategoryApi,
     generateSlug
 } from '@/services/categories';
+import { Category, CreateCategoryData } from '@/types/category';
 
 interface UseCategoriesReturn {
     categories: Category[];

@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, getCurrentUser, logout as authLogout, isAuthenticated } from '@/services/auth';
+import { getCurrentUser, logout as authLogout, isAuthenticated } from '@/services/auth';
+import { User } from '@/types/auth';
 
 interface AuthContextType {
     user: User | null;

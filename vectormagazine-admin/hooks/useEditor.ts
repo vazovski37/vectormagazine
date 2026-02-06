@@ -4,13 +4,13 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { OutputData } from '@editorjs/editorjs';
 import type { EditorRef } from '@/components/Editor';
 import {
-    Article,
-    CreateArticleData,
     getArticleBySlug,
     createArticle,
     updateArticle
 } from '@/services/articles';
-import { Category, getCategories } from '@/services/categories';
+import { Article, CreateArticleData } from '@/types/article';
+import { getCategories } from '@/services/categories';
+import { Category } from '@/types/category';
 
 interface UseEditorReturn {
     // Article data

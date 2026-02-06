@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Article,
-    StatusFilter,
     getArticles,
     updateArticleStatus as updateStatus,
     deleteArticle as deleteArticleApi
 } from '@/services/articles';
+import { Article, StatusFilter } from '@/types/article';
 
 interface UseArticlesReturn {
     articles: Article[];

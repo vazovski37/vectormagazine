@@ -40,6 +40,15 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
     REMEMBER_COOKIE_SECURE = False
 
+    CORS_ORIGINS = [
+        FRONTEND_URL,
+        ADMIN_URL,
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001'
+    ]
+
 
 class ProductionConfig(Config):
     """Production configuration"""
@@ -58,12 +67,8 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     
-    @property
-    def CORS_ORIGINS(self):
-        origins = os.environ.get('PROD_CORS_ORIGINS') or os.environ.get('CORS_ORIGINS')
-        if not origins:
-            return ['https://vectormagazine.com', 'https://admin.vectormagazine.com']
-        return [o.strip() for o in origins.split(',')]
+    _origins_str = os.environ.get('PROD_CORS_ORIGINS') or os.environ.get('CORS_ORIGINS')
+    CORS_ORIGINS = [o.strip() for o in _origins_str.split(',')] if _origins_str else ['https://vectormagazine.com', 'https://admin.vectormagazine.com']
     
     @classmethod
     def init_app(cls, app):

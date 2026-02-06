@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/services/api';
+import { API_ENDPOINTS } from '@/services/endpoints';
 import { editorImageUploader } from '@/services/upload';
 import { safeImport } from '@/lib/editorUtils';
 
@@ -138,15 +139,19 @@ export const loadEditorTools = async () => {
         linkTool: LinkTool ? {
             class: LinkTool as any,
             config: {
-                endpoint: `${API_BASE_URL}/api/link`,
+                endpoint: `${API_BASE_URL}${API_ENDPOINTS.LINK.BASE}`,
             },
         } : undefined,
         image: ImageTool ? {
             class: ImageTool as any,
             tunes: ImageTune ? ['imageTune'] : [], // Add custom resizing tune
+            // import { API_ENDPOINTS } from '@/services/endpoints'; // Importing dynamically below is safer for config object construction if possible, but here we can just replace string interpolation
+
+            // ... actually I need to import it first. 
+            // Replacing the logic:
             config: {
                 endpoints: {
-                    byFile: `${API_BASE_URL}/api/upload`,
+                    byFile: `${API_BASE_URL}${API_ENDPOINTS.UPLOAD.BASE}`,
                 },
                 field: 'image',
                 types: 'image/*',
@@ -230,7 +235,7 @@ export const loadEditorTools = async () => {
                         class: ImageTool,
                         config: {
                             endpoints: {
-                                byFile: `${API_BASE_URL}/api/upload`,
+                                byFile: `${API_BASE_URL}${API_ENDPOINTS.UPLOAD.BASE}`,
                             },
                             uploader: {
                                 uploadByFile: async (file: File) => {

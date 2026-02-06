@@ -141,3 +141,21 @@ export async function getArticlesFresh(status?: string): Promise<Article[]> {
 
     return response as Article[];
 }
+
+// Newsletter API
+export async function subscribeToNewsletter(email: string): Promise<{ id: number; email: string; is_active: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/api/subscribers/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Subscription failed: ${response.statusText}`);
+    }
+
+    return response.json();
+}

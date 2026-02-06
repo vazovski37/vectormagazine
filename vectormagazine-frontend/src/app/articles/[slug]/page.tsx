@@ -66,6 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
     const { slug } = await params;
+    console.log(`Loading article page for slug: ${slug}`);
 
     let article;
     try {

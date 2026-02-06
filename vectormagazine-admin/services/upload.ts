@@ -1,16 +1,8 @@
 import { fetchFormData } from './api';
+import { API_ENDPOINTS } from './endpoints';
 
 // Types
-export interface UploadResponse {
-    success: 1 | 0;
-    file?: {
-        url: string;
-        type?: 'image' | 'video';
-    };
-    error?: {
-        message: string;
-    };
-}
+import { UploadResponse } from '@/types/upload';
 
 // Allowed file types
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
@@ -31,14 +23,14 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('image', file);
 
-    return fetchFormData<UploadResponse>('/api/upload', formData);
+    return fetchFormData<UploadResponse>(API_ENDPOINTS.UPLOAD.BASE, formData);
 }
 
 export async function uploadVideo(file: File): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('image', file); // Backend uses 'image' field for all uploads
 
-    return fetchFormData<UploadResponse>('/api/upload', formData);
+    return fetchFormData<UploadResponse>(API_ENDPOINTS.UPLOAD.BASE, formData);
 }
 
 export async function uploadMedia(file: File): Promise<UploadResponse> {

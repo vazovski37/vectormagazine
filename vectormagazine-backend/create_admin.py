@@ -1,87 +1,59 @@
-"""
-Setup script to create initial admin user
-Run this once after database migration to create the first admin account
-"""
-
 import os
 import sys
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from dotenv import load_dotenv
+
+# Load environment variables
 load_dotenv()
 
-from app import create_app
-from models import db, User, UserRole
+from app import create_app, db
+from app.models import User, UserRole
 
-
-def create_admin_user(email, password, name):
-    """Create an admin user if it doesn't exist"""
+def create_admin_user(email=None, password=None, name=None):
+    """
+    Creates or updates an admin user.
+    """
     app = create_app()
-    
     with app.app_context():
-        # Check if user already exists
-        existing = User.query.filter_by(email=email.lower()).first()
-        if existing:
-            print(f"User with email {email} already exists.")
-            return False
-        
-        # Create new admin user
-        user = User(
-            email=email.lower(),
-            name=name,
-            role=UserRole.ADMIN,
-            is_active=True
-        )
-        user.set_password(password)
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        print(f"Admin user created successfully!")
-        print(f"  Email: {email}")
-        print(f"  Name: {name}")
-        print(f"  Role: admin")
-        return True
+        # Get credentials from args or env or defaults
+        email = email or os.environ.get('ADMIN_EMAIL', 'giorgi@vectormagazine.com')
+        password = password or os.environ.get('ADMIN_PASSWORD', 'giorgigiorgi')
+        name = name or os.environ.get('ADMIN_NAME', 'Admin')
 
+        print(f"Checking for user: {email}")
+        user = User.query.filter_by(email=email).first()
 
-if __name__ == '__main__':
-    print("\n=== Vector Magazine Admin User Setup ===\n")
-    
-    # Default admin credentials (change in production!)
-    default_email = os.environ.get('ADMIN_EMAIL', 'admin@vectormagazine.com')
-    default_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
-    default_name = os.environ.get('ADMIN_NAME', 'Admin')
-    
-    # Interactive mode if no environment variables
-    if len(sys.argv) > 1:
-        if sys.argv[1] == '--interactive':
-            email = input(f"Email [{default_email}]: ").strip() or default_email
-            password = input("Password: ").strip()
-            if not password:
-                print("Password cannot be empty!")
-                sys.exit(1)
-            name = input(f"Name [{default_name}]: ").strip() or default_name
+        if user:
+            print(f"User {email} already exists. Updating...")
+            user.name = name
+            user.role = UserRole.ADMIN
+            user.is_active = True
         else:
-            email = sys.argv[1]
-            password = sys.argv[2] if len(sys.argv) > 2 else default_password
-            name = sys.argv[3] if len(sys.argv) > 3 else default_name
-    else:
-        email = default_email
-        password = default_password
-        name = default_name
+            print(f"Creating new admin user: {email}")
+            user = User(
+                email=email,
+                name=name,
+                role=UserRole.ADMIN,
+                is_active=True
+            )
+            db.session.add(user)
+
+        user.set_password(password)
+        try:
+            db.session.commit()
+            print(f"Successfully configured admin user: {email}")
+            print("You can now log in to the admin panel.")
+        except Exception as e:
+            print(f"Error creating admin user: {e}")
+            db.session.rollback()
+
+if __name__ == "__main__":
+    # check for command line args
+    import argparse
+    parser = argparse.ArgumentParser(description='Create Admin User')
+    parser.add_argument('--email', help='Admin Email')
+    parser.add_argument('--password', help='Admin Password')
+    parser.add_argument('--name', help='Admin Name')
     
-    print(f"Creating admin user with email: {email}")
+    args = parser.parse_args()
     
-    # Validate password length
-    if len(password) < 6:
-        print("Error: Password must be at least 6 characters!")
-        sys.exit(1)
-    
-    success = create_admin_user(email, password, name)
-    
-    if success:
-        print("\n✓ You can now login to the admin panel!")
-    else:
-        print("\n! User already exists. Use the existing credentials to login.")
+    create_admin_user(args.email, args.password, args.name)

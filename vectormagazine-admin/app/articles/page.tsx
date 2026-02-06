@@ -55,13 +55,16 @@ export default function ArticlesPage() {
       archived: 'Archived',
     };
 
-    const Icon = icons[status as keyof typeof icons];
-    const variant = variants[status as keyof typeof variants] || 'secondary';
+    if (!status) return null;
+
+    const normalizedStatus = status.toLowerCase();
+    const Icon = icons[normalizedStatus as keyof typeof icons] || Clock;
+    const variant = variants[normalizedStatus as keyof typeof variants] || 'secondary';
 
     return (
       <Badge variant={variant} className="flex items-center gap-1">
         <Icon className="h-3 w-3" />
-        {labels[status as keyof typeof labels]}
+        {labels[normalizedStatus as keyof typeof labels] || status}
       </Badge>
     );
   };
@@ -146,8 +149,8 @@ export default function ArticlesPage() {
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${statusFilter === 'all'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             All ({statusCounts.all})
@@ -155,8 +158,8 @@ export default function ArticlesPage() {
           <button
             onClick={() => setStatusFilter('published')}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${statusFilter === 'published'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             Published ({statusCounts.published})
@@ -164,8 +167,8 @@ export default function ArticlesPage() {
           <button
             onClick={() => setStatusFilter('draft')}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${statusFilter === 'draft'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             Drafts ({statusCounts.draft})
@@ -173,8 +176,8 @@ export default function ArticlesPage() {
           <button
             onClick={() => setStatusFilter('archived')}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${statusFilter === 'archived'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             Archived ({statusCounts.archived})

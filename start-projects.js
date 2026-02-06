@@ -12,7 +12,7 @@ const PROJECTS = {
     2: {
         name: 'Backend (Flask)',
         folder: 'vectormagazine-backend',
-        command: 'venv\\Scripts\\python -m flask run',
+        command: 'venv\\Scripts\\python run.py',
         port: 5000
     },
     3: {

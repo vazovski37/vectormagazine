@@ -3,9 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from config import config
-from models import db
 import os
 
+db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app(config_name='default'):
@@ -17,11 +17,16 @@ def create_app(config_name='default'):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app) # Allow all for now, config handles specific origins
+    
+    # CORS Configuration
+    # Must support credentials for auth cookies
+    CORS(app, 
+         resources={r"/api/*": {"origins": app.config['CORS_ORIGINS']}},
+         supports_credentials=True)
     
     # Register blueprints
-    from routes import api
-    app.register_blueprint(api)
+    from .api import api as api_bp
+    app.register_blueprint(api_bp)
     
     # Create upload directory if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -29,11 +34,6 @@ def create_app(config_name='default'):
     # Simple health check
     @app.route('/')
     def index():
-        return "Vector Magazine Backend API Running"
+        return "Vector Magazine Backend API (Refactored) Running"
 
     return app
-
-app = create_app(os.getenv('FLASK_CONFIG') or 'default')
-
-if __name__ == '__main__':
-    app.run(debug=True)

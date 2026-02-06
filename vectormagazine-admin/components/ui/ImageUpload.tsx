@@ -4,7 +4,8 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Link, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
-import { uploadMedia, UploadResponse } from '@/services/upload';
+import { uploadMedia } from '@/services/upload';
+import { UploadResponse } from '@/types/upload';
 
 interface ImageUploadProps {
     value?: string;
