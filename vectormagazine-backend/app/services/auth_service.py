@@ -11,7 +11,7 @@ class AuthService:
             payload = {
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in),
                 'iat': datetime.datetime.utcnow(),
-                'sub': user_id
+                'sub': str(user_id)
             }
             return jwt.encode(
                 payload,
@@ -27,9 +27,14 @@ class AuthService:
             payload = jwt.decode(token, current_app.config.get('SECRET_KEY'), algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
+            current_app.logger.warning("Token expired")
             return None
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            current_app.logger.warning(f"Invalid token: {e}")
             return None
+        except Exception as e:
+             current_app.logger.error(f"Token decode error: {e}")
+             return None
             
     @staticmethod
     def generate_refresh_token(user_id):

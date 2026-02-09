@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import Container from '@/components/ui/Container';
 import { formatRelativeDate } from '@/lib/types';
 import type { Metadata } from 'next';
+import { ArticleTracker } from '@/components/ArticleTracker';
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -64,6 +65,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 }
 
+
+
 export default async function ArticlePage({ params }: Props) {
     const { slug } = await params;
     console.log(`Loading article page for slug: ${slug}`);
@@ -81,6 +84,7 @@ export default async function ArticlePage({ params }: Props) {
 
     return (
         <div className="min-h-screen w-full custom-scrollbar font-inter">
+            <ArticleTracker articleId={article.id} slug={article.slug} />
             <Header />
 
             <main className="py-12">

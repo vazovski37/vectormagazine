@@ -43,7 +43,10 @@ export async function editorImageUploader(file: File): Promise<UploadResponse> {
     const result = await uploadImage(file);
 
     if (result.success !== 1) {
-        throw new Error(result.error?.message || 'Upload failed');
+        const errorMessage = typeof result.error === 'string'
+            ? result.error
+            : result.error?.message || 'Upload failed';
+        throw new Error(errorMessage);
     }
 
     return result;

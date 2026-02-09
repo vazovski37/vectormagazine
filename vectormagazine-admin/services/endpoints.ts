@@ -20,5 +20,9 @@ export const API_ENDPOINTS = {
     },
     LINK: {
         BASE: '/api/link', // For Editor.js link too
+    },
+    ANALYTICS: {
+        DASHBOARD: '/api/analytics/dashboard',
+        ARTICLE: (id: number) => `/api/analytics/article/${id}`,
     }
 } as const;

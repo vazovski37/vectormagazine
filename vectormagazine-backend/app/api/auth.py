@@ -22,7 +22,7 @@ def token_required(f):
         if not user_id:
             return jsonify({'error': 'Token is invalid or expired'}), 401
             
-        current_user = User.query.get(user_id)
+        current_user = User.query.get(int(user_id))
         if not current_user:
             return jsonify({'error': 'User not found'}), 401
             
@@ -97,7 +97,7 @@ def refresh():
     if not user_id:
         return jsonify({'error': 'Refresh token invalid'}), 401
         
-    user = User.query.get(user_id)
+    user = User.query.get(int(user_id))
     if not user or not user.is_active:
         return jsonify({'error': 'User invalid'}), 401
         

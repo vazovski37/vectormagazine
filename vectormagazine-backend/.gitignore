@@ -42,9 +42,10 @@ instance/
 *.sqlite
 *.sqlite3
 
-# Uploads (optional - you may want to track these)
-static/uploads/*
-!static/uploads/.gitkeep
+# Uploads
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
 
 # Logs
 *.log

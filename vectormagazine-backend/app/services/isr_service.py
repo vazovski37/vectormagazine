@@ -12,7 +12,7 @@ class ISRService:
         secret = current_app.config.get('REVALIDATION_SECRET')
         
         if not secret:
-            print("Warning: REVALIDATION_SECRET not set, skipping ISR")
+            current_app.logger.warning("REVALIDATION_SECRET not set, skipping ISR")
             return False
             
         try:
@@ -26,11 +26,12 @@ class ISRService:
             response = requests.post(url, params=params, timeout=5)
             
             if response.status_code == 200:
+                current_app.logger.info(f"ISR Success: Revalidated {path}")
                 return True
             else:
-                print(f"ISR Error: {response.text}")
+                current_app.logger.error(f"ISR Error for {path}: {response.status_code} - {response.text}")
                 return False
                 
         except Exception as e:
-            print(f"ISR Exception: {str(e)}")
+            current_app.logger.exception(f"ISR Exception for {path}: {str(e)}")
             return False

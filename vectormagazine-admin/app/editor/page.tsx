@@ -17,8 +17,10 @@ import {
   Eye,
   FileText,
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  TrendingUp
 } from 'lucide-react';
+import { ArticleStats } from '@/components/ArticleStats';
 import type { EditorRef } from '@/components/Editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -414,6 +416,11 @@ function EditorContent() {
                       className="h-9"
                     />
                   </div>
+                </CollapsibleSection>
+
+                {/* Analytics */}
+                <CollapsibleSection title="Analytics" icon={TrendingUp} defaultOpen={true}>
+                  <ArticleStats articleId={articleId} />
                 </CollapsibleSection>
 
                 {/* Stats */}

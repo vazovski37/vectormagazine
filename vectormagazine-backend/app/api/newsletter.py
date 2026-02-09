@@ -9,7 +9,7 @@ bp = Blueprint('newsletter', __name__)
 def is_valid_email(email):
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
-@bp.route('/', methods=['GET'])
+@bp.route('', methods=['GET'])
 def get_subscribers():
     page = request.args.get('page', 1, type=int)
     per_page = 20
@@ -24,7 +24,7 @@ def get_subscribers():
         'current_page': page
     })
 
-@bp.route('/', methods=['POST'])
+@bp.route('', methods=['POST'])
 def add_subscriber():
     data = request.json
     email = data.get('email')

@@ -4,7 +4,7 @@ export interface UploadResponse {
         url: string;
         type?: 'image' | 'video';
     };
-    error?: {
+    error?: string | {
         message: string;
     };
 }

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
-import { FileText, ArrowRight, Settings } from 'lucide-react';
+import { FileText, ArrowRight, Settings, TrendingUp } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -49,6 +49,22 @@ export default function Home() {
                 <p className="mt-1 text-sm font-medium text-gray-800">Manage newsletter subscribers</p>
               </div>
               <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+            </div>
+          </Link>
+
+          <Link
+            href="/analytics"
+            className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-8 shadow-sm transition-all hover:border-violet-300 hover:shadow-lg"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100 text-violet-600 group-hover:bg-violet-200 transition-colors">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Analytics</h3>
+                <p className="mt-1 text-sm font-medium text-gray-800">View site performance</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
             </div>
           </Link>
 
