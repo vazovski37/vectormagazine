@@ -1,8 +1,6 @@
-import { fetchFormData } from './api';
-import { API_ENDPOINTS } from './endpoints';
-
-// Types
+import { supabase } from '@/lib/supabase';
 import { UploadResponse } from '@/types/upload';
+import { v4 as uuidv4 } from 'uuid';
 
 // Allowed file types
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
@@ -18,23 +16,46 @@ export function isImageFile(filename: string): boolean {
     return IMAGE_EXTENSIONS.includes(ext);
 }
 
+function getFileExtension(filename: string): string {
+    return filename.split('.').pop() || '';
+}
+
 // API Functions
 export async function uploadImage(file: File): Promise<UploadResponse> {
-    const formData = new FormData();
-    formData.append('image', file);
+    const fileExt = getFileExtension(file.name);
+    const fileName = `${uuidv4()}.${fileExt}`;
+    const filePath = `${fileName}`;
 
-    return fetchFormData<UploadResponse>(API_ENDPOINTS.UPLOAD.BASE, formData);
+    const { data, error } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+
+    if (error) {
+        console.error('Upload Error:', error);
+        return {
+            success: 0,
+            error: error.message
+        };
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+    return {
+        success: 1,
+        file: {
+            url: publicUrl,
+            type: isVideoFile(file.name) ? 'video' : 'image'
+        }
+    };
 }
 
 export async function uploadVideo(file: File): Promise<UploadResponse> {
-    const formData = new FormData();
-    formData.append('image', file); // Backend uses 'image' field for all uploads
-
-    return fetchFormData<UploadResponse>(API_ENDPOINTS.UPLOAD.BASE, formData);
+    return uploadImage(file);
 }
 
 export async function uploadMedia(file: File): Promise<UploadResponse> {
-    // Unified upload function for both images and videos
     return uploadImage(file);
 }
 

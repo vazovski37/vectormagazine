@@ -5,8 +5,7 @@ import {
     BarChart3, Users, Eye, TrendingUp, Calendar, ArrowUpRight,
     Smartphone, Monitor, Globe
 } from 'lucide-react';
-import { API_ENDPOINTS } from '@/services/endpoints';
-import { fetchApi } from '@/services/api';
+import { supabase } from '@/lib/supabase';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -59,8 +58,118 @@ export function AnalyticsDashboard() {
     const fetchStats = async () => {
         try {
             setIsLoading(true);
-            const data = await fetchApi<DashboardData>(`${API_ENDPOINTS.ANALYTICS.DASHBOARD}?days=${days}`);
-            setStats(data);
+
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - days);
+            const startDateStr = startDate.toISOString();
+
+            // 1. Fetch all analytics data for the period
+            const { data: analyticsData, error: analyticsError } = await supabase
+                .from('analytics')
+                .select('*')
+                .gte('timestamp', startDateStr)
+                .order('timestamp', { ascending: true });
+
+            if (analyticsError) throw analyticsError;
+
+            // 2. Compute Summary
+            const totalViews = analyticsData?.length || 0;
+            const uniqueVisitors = new Set((analyticsData || []).map(r => r.session_id || r.ip_address)).size;
+
+            // 3. Compute Chart Data
+            const chartDataMap = new Map<string, number>();
+            for (let d = 0; d < days; d++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + d);
+                chartDataMap.set(date.toISOString().split('T')[0], 0);
+            }
+
+            (analyticsData || []).forEach(row => {
+                const dateKey = new Date(row.timestamp).toISOString().split('T')[0];
+                if (chartDataMap.has(dateKey)) {
+                    chartDataMap.set(dateKey, chartDataMap.get(dateKey)! + 1);
+                }
+            });
+            const chart_data = Array.from(chartDataMap.entries()).map(([date, views]) => ({ date, views }));
+
+            // 4. Compute Top Content (requires fetching articles)
+            const articlePaths = (analyticsData || [])
+                .filter(r => r.path?.startsWith('/article/'))
+                .map(r => r.path);
+
+            const pathCounts = articlePaths.reduce((acc, path) => {
+                acc[path] = (acc[path] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+
+            // Sort paths by view count desc, take top 5
+            const topPaths = Object.entries(pathCounts)
+                .sort(([, a], [, b]) => (b as number) - (a as number))
+                .slice(0, 5);
+
+            let top_content: TopArticle[] = [];
+
+            if (topPaths.length > 0) {
+                // Extract possible IDs/slugs to query
+                const pathIdentifiers = topPaths.map(([path]) => path.split('/').pop());
+
+                // Note: The original generic analytics approach didn't strictly couple path to ID/slug format.
+                // Assuming path is like `/article/slug-or-id`
+                const { data: articles, error: articlesError } = await supabase
+                    .from('articles')
+                    .select('id, title, slug')
+                    .or(`slug.in.(${pathIdentifiers.join(',')}), id.in.(${pathIdentifiers.filter(id => !isNaN(Number(id))).join(',')})`);
+
+                if (!articlesError && articles) {
+                    top_content = topPaths.map(([path, views]) => {
+                        const identifier = path.split('/').pop();
+                        const article = articles.find(a => a.slug === identifier || a.id.toString() === identifier);
+                        return {
+                            title: article?.title || path,
+                            slug: article?.slug || '',
+                            views: views as number
+                        };
+                    });
+                } else {
+                    top_content = topPaths.map(([path, views]) => ({
+                        title: path,
+                        slug: '',
+                        views: views as number
+                    }));
+                }
+            }
+
+            // 5. Compute Device Breakdown
+            const uaCounts = (analyticsData || []).reduce((acc, r) => {
+                let deviceType = 'desktop';
+                if (r.user_agent?.toLowerCase().includes('mobi')) deviceType = 'mobile';
+                else if (r.user_agent?.toLowerCase().includes('tablet') || r.user_agent?.toLowerCase().includes('ipad')) deviceType = 'tablet';
+
+                acc[deviceType] = (acc[deviceType] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+            const device_breakdown = Object.entries(uaCounts).map(([name, value]) => ({ name, value: value as number }));
+
+            // 6. Compute Country Breakdown (Mocked if no IP resolution, or grouped if IP available)
+            // Real country resolution usually requires an external IP service or Edge function. 
+            // For now, returning global or grouping by whatever partial location info we have.
+            const country_breakdown: CountryStat[] = [
+                { code: 'GLOBAL', views: totalViews }
+            ];
+
+            setStats({
+                period: `${days} days`,
+                summary: {
+                    total_views: totalViews,
+                    unique_visitors: uniqueVisitors
+                },
+                chart_data,
+                top_content,
+                device_breakdown,
+                country_breakdown
+            });
+
         } catch (error) {
             console.error('Failed to fetch dashboard stats:', error);
         } finally {
@@ -184,7 +293,7 @@ export function AnalyticsDashboard() {
                                 <YAxis style={{ fontSize: '12px' }} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    labelFormatter={(val: string) => new Date(val).toLocaleDateString()}
+                                    labelFormatter={(val: any) => new Date(val).toLocaleDateString()}
                                 />
                                 <Area type="monotone" dataKey="views" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorViews)" />
                             </AreaChart>

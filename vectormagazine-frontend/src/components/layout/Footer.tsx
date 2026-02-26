@@ -5,7 +5,7 @@ import { Facebook, Twitter, Instagram } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { subscribeToNewsletter } from "@/lib/api";
 
 const footerLinks = [
   { label: "Privacy Policy", href: "#" },
@@ -66,17 +66,11 @@ export default function Footer() {
     setIsError(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const { success, error } = await subscribeToNewsletter(email);
 
-      const data = await response.json();
+      if (!success) throw new Error(error || "Failed; to subscribe");
 
-      if (!response.ok) throw new Error(data.error || "Failed to subscribe");
-
-      setMessage(data.message || "Subscribed successfully!");
+      setMessage("Subscribed successfully!");
       setEmail("");
     } catch (error: any) {
       setIsError(true);

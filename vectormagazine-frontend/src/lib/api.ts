@@ -1,161 +1,137 @@
-// API service for fetching data from backend
+// API service for fetching data from Supabase
 
 import { Article, Category } from './types';
+import { supabase } from './supabase';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-
-// Cache durations (in seconds)
 const CACHE_DURATION = {
-    SHORT: 60,      // 1 minute for dynamic content
-    MEDIUM: 300,    // 5 minutes for semi-static content
-    LONG: 3600,     // 1 hour for static content
+    SHORT: 60,      // 1 minute
+    MEDIUM: 300,    // 5 minutes
+    LONG: 3600,     // 1 hour
 };
-
-// Response type with pagination
-interface PaginatedResponse<T> {
-    articles: T[];
-    pagination: {
-        total: number;
-        limit: number;
-        offset: number;
-        has_more: boolean;
-    };
-}
-
-// Generic fetch wrapper with error handling and caching
-async function fetchApi<T>(
-    endpoint: string,
-    options?: { revalidate?: number; cache?: RequestCache }
-): Promise<T> {
-    const { revalidate = CACHE_DURATION.SHORT, cache } = options || {};
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        next: cache ? undefined : { revalidate },
-        cache: cache,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
-}
 
 // Article API functions
 export async function getArticles(status?: string, limit?: number): Promise<Article[]> {
-    const params = new URLSearchParams();
-    if (status && status !== 'all') params.append('status', status);
-    if (limit) params.append('limit', limit.toString());
+    let query = supabase.from('articles').select('*').order('created_at', { ascending: false });
 
-    const query = params.toString() ? `?${params.toString()}` : '';
-
-    // Handle both old array format and new paginated format
-    const response = await fetchApi<PaginatedResponse<Article> | Article[]>(
-        `/api/articles${query}`,
-        { revalidate: CACHE_DURATION.SHORT }
-    );
-
-    // Check if it's the new paginated format
-    if ('articles' in response && Array.isArray(response.articles)) {
-        return response.articles;
+    if (status && status !== 'all') {
+        query = query.eq('status', status.toUpperCase());
+    }
+    if (limit) {
+        query = query.limit(limit);
     }
 
-    // Old format (array directly)
-    return response as Article[];
+    const { data, error } = await query;
+    if (error) {
+        console.error('Error fetching articles:', error);
+        return [];
+    }
+    return data as Article[];
 }
 
 export async function getPublishedArticles(): Promise<Article[]> {
-    return getArticles('published');
+    return getArticles('PUBLISHED');
 }
 
-export async function getArticleBySlug(slug: string): Promise<Article> {
-    return fetchApi<Article>(
-        `/api/articles/slug/${slug}`,
-        { revalidate: CACHE_DURATION.SHORT }
-    );
+export async function getArticleBySlug(slug: string): Promise<Article | null> {
+    const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+    if (error) {
+        console.error(`Error fetching article by slug ${slug}:`, error);
+        return null;
+    }
+    return data as Article;
 }
 
-export async function getArticleById(id: number): Promise<Article> {
-    return fetchApi<Article>(
-        `/api/articles/${id}`,
-        { revalidate: CACHE_DURATION.SHORT }
-    );
+export async function getArticleById(id: number): Promise<Article | null> {
+    const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error(`Error fetching article by id ${id}:`, error);
+        return null;
+    }
+    return data as Article;
 }
 
 // Category API functions
 export async function getCategories(): Promise<Category[]> {
-    return fetchApi<Category[]>(
-        '/api/categories',
-        { revalidate: CACHE_DURATION.MEDIUM }
-    );
+    const { data, error } = await supabase.from('categories').select('*');
+    if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+    }
+    return data as Category[];
 }
 
-export async function getCategoryBySlug(slug: string): Promise<Category> {
-    return fetchApi<Category>(
-        `/api/categories/slug/${slug}`,
-        { revalidate: CACHE_DURATION.MEDIUM }
-    );
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+    const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+    if (error) {
+        console.error(`Error fetching category by slug ${slug}:`, error);
+        return null;
+    }
+    return data as Category;
 }
 
 // Get articles by category
 export async function getArticlesByCategory(categoryId: number): Promise<Article[]> {
-    const articles = await getPublishedArticles();
-    return articles.filter(article => article.category_id === categoryId);
+    const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'PUBLISHED')
+        .eq('category_id', categoryId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error(`Error fetching articles for category ${categoryId}:`, error);
+        return [];
+    }
+    return data as Article[];
 }
 
 // Get featured/hero articles (first 3 published)
 export async function getHeroArticles(): Promise<Article[]> {
-    const articles = await getArticles('published', 3);
-    return articles.slice(0, 3);
+    return getArticles('PUBLISHED', 3);
 }
 
 // Get latest articles (for hero bottom row)
 export async function getLatestArticles(count: number = 4): Promise<Article[]> {
-    const articles = await getArticles('published', count);
-    return articles.slice(0, count);
+    return getArticles('PUBLISHED', count);
 }
 
 // Get breaking news articles  
 export async function getBreakingNews(count: number = 5): Promise<Article[]> {
-    const articles = await getArticles('published', count);
-    return articles.slice(0, count);
+    return getArticles('PUBLISHED', count);
 }
 
 // Force fresh fetch (for admin panel)
 export async function getArticlesFresh(status?: string): Promise<Article[]> {
-    const params = new URLSearchParams();
-    if (status && status !== 'all') params.append('status', status);
-    const query = params.toString() ? `?${params.toString()}` : '';
-
-    const response = await fetchApi<PaginatedResponse<Article> | Article[]>(
-        `/api/articles${query}`,
-        { cache: 'no-store' }
-    );
-
-    if ('articles' in response && Array.isArray(response.articles)) {
-        return response.articles;
-    }
-
-    return response as Article[];
+    return getArticles(status); // Since Supabase is real-time via the JS client, we don't strictly need cache busting here like we did with fetch.
 }
 
 // Newsletter API
-export async function subscribeToNewsletter(email: string): Promise<{ id: number; email: string; is_active: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/api/subscribers/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-    });
+export async function subscribeToNewsletter(email: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.from('subscribers').insert([{ email, is_active: true }]);
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Subscription failed: ${response.statusText}`);
+    if (error) {
+        // Handle unique constraint violations gracefully
+        if (error.code === '23505') {
+            return { success: false, error: 'Email is already subscribed' };
+        }
+        console.error('Newsletter error:', error);
+        return { success: false, error: error.message };
     }
 
-    return response.json();
+    return { success: true };
 }

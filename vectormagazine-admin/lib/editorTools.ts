@@ -1,5 +1,3 @@
-import { API_BASE_URL } from '@/services/api';
-import { API_ENDPOINTS } from '@/services/endpoints';
 import { editorImageUploader } from '@/services/upload';
 import { safeImport } from '@/lib/editorUtils';
 
@@ -138,9 +136,8 @@ export const loadEditorTools = async () => {
         } : undefined,
         linkTool: LinkTool ? {
             class: LinkTool as any,
-            config: {
-                endpoint: `${API_BASE_URL}${API_ENDPOINTS.LINK.BASE}`,
-            },
+            // The Next.js frontend or a Supabase Edge Function will handle link metadata fetching now
+            // config: { endpoint: '' } // LinkTool requires a backend endpoint to fetch metadata
         } : undefined,
         image: ImageTool ? {
             class: ImageTool as any,
@@ -150,9 +147,6 @@ export const loadEditorTools = async () => {
             // ... actually I need to import it first. 
             // Replacing the logic:
             config: {
-                endpoints: {
-                    byFile: `${API_BASE_URL}${API_ENDPOINTS.UPLOAD.BASE}`,
-                },
                 field: 'image',
                 types: 'image/*',
                 captionPlaceholder: 'Add a caption (optional)',
@@ -234,9 +228,6 @@ export const loadEditorTools = async () => {
                     image: ImageTool ? {
                         class: ImageTool,
                         config: {
-                            endpoints: {
-                                byFile: `${API_BASE_URL}${API_ENDPOINTS.UPLOAD.BASE}`,
-                            },
                             uploader: {
                                 uploadByFile: async (file: File) => {
                                     return editorImageUploader(file);

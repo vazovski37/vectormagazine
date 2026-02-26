@@ -27,6 +27,7 @@ export interface Article {
 
 export interface CreateArticleData {
     title: string;
+    slug?: string;
     subtitle?: string | null;
     description?: string | null;
     cover_image?: string | null;

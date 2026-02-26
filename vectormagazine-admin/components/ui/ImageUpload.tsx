@@ -49,7 +49,10 @@ export function ImageUpload({
                 setShowUrlInput(false);
                 setUrlInputValue('');
             } else {
-                setError(result.error?.message || 'Upload failed');
+                const errorMessage = typeof result.error === 'string'
+                    ? result.error
+                    : result.error?.message || 'Upload failed';
+                setError(errorMessage);
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Upload failed');

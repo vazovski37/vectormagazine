@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Eye, TrendingUp, Calendar } from 'lucide-react';
-import { API_ENDPOINTS } from '@/services/endpoints';
-import { fetchApi } from '@/services/api';
+import { supabase } from '@/lib/supabase';
 
 interface ChartData {
     date: string;
@@ -33,8 +32,53 @@ export function ArticleStats({ articleId }: { articleId: number | null }) {
     const fetchStats = async () => {
         try {
             setIsLoading(true);
-            const data = await fetchApi<StatsData>(`${API_ENDPOINTS.ANALYTICS.ARTICLE(articleId!)}?days=${days}`);
-            setStats(data);
+
+            // Calculate date range
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - days);
+            const startDateStr = startDate.toISOString();
+
+            // Fetch analytics data for this article
+            const { data: rawData, error } = await supabase
+                .from('analytics')
+                .select('*')
+                .eq('path', `/article/${articleId}`) // Assuming the path contains the article ID
+                .gte('timestamp', startDateStr)
+                .order('timestamp', { ascending: true });
+
+            if (error) throw error;
+
+            // Format into expected stats format
+            const uniqueVisitors = new Set((rawData || []).map(r => r.session_id || r.ip_address)).size;
+
+            // Group by date for chart
+            const chartDataMap = new Map<string, number>();
+
+            // Pre-fill days with 0
+            for (let d = 0; d < days; d++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + d);
+                chartDataMap.set(date.toISOString().split('T')[0], 0);
+            }
+
+            (rawData || []).forEach(row => {
+                const dateKey = new Date(row.timestamp).toISOString().split('T')[0];
+                if (chartDataMap.has(dateKey)) {
+                    chartDataMap.set(dateKey, chartDataMap.get(dateKey)! + 1);
+                }
+            });
+
+            const chart_data = Array.from(chartDataMap.entries()).map(([date, views]) => ({ date, views }));
+
+            setStats({
+                period: `${days} days`,
+                summary: {
+                    views: rawData?.length || 0,
+                    unique_visitors: uniqueVisitors
+                },
+                chart_data
+            });
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         } finally {
