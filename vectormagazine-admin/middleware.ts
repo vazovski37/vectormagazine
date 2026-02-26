@@ -1,50 +1,78 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-// Paths that don't require authentication
-const publicPaths = ['/login'];
+export async function middleware(request: NextRequest) {
+    let supabaseResponse = NextResponse.next({
+        request,
+    })
 
-// Paths that are always public (static files, etc.)
-const staticPaths = ['/_next', '/favicon.ico', '/static'];
-
-export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-
-    // Skip static files
-    if (staticPaths.some(path => pathname.startsWith(path))) {
-        return NextResponse.next();
+    // Skip static files and API routes (which are handled dynamically)
+    const { pathname } = request.nextUrl
+    if (
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/static') ||
+        pathname === '/favicon.ico'
+    ) {
+        return supabaseResponse
     }
 
-    // Skip API routes (handled by backend/proxy)
-    if (pathname.startsWith('/api')) {
-        return NextResponse.next();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+
+    const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        supabaseResponse.cookies.set(name, value, options)
+                    )
+                },
+            },
+        }
+    )
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    // Protect all non-login routes
+    if (
+        !user &&
+        !request.nextUrl.pathname.startsWith('/login')
+    ) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
     }
 
-    // Skip public paths
-    if (publicPaths.includes(pathname)) {
-        return NextResponse.next();
+    // If user is logged in and trying to go to login page, redirect them to dashboard
+    if (user && request.nextUrl.pathname.startsWith('/login')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        return NextResponse.redirect(url)
     }
 
-    // Check for refresh token cookie (indicates logged in session)
-    const refreshToken = request.cookies.get('refresh_token');
-
-    console.log('Middleware Path:', pathname);
-    console.log('All Cookies:', request.cookies.getAll().map(c => `${c.name}=${c.value}`).join('; '));
-    console.log('Refresh Token Found:', !!refreshToken);
-
-    if (!refreshToken) {
-        // No refresh token, redirect to login
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
-    }
-
-    return NextResponse.next();
+    return supabaseResponse
 }
 
 export const config = {
-    // Match all paths except static files
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        /*
+         * Match all request paths except for the ones starting with:
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         */
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
-};
+}
