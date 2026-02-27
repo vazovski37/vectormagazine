@@ -39,6 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     try {
         const article = await getArticleBySlug(slug);
 
+        if (!article) {
+            return {
+                title: 'Article Not Found',
+                description: 'The requested article could not be found.',
+            };
+        }
+
         return {
             title: article.meta_title || article.title,
             description: article.meta_description || article.description || article.subtitle,
