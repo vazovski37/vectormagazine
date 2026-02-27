@@ -28,6 +28,7 @@ export default function LoginPage() {
             await login(email, password);
             await refreshUser();
             // Redirect to dashboard
+            router.refresh();
             router.push('/');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
