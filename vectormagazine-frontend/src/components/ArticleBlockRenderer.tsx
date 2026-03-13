@@ -1,17 +1,50 @@
 
 import React from 'react';
 
+// Supported EditorJS block types are documented here to keep admin and frontend in sync:
+// paragraph, header, image, list, quote, code, raw, delimiter, table, columns, spacer, video, linkTool
+
+interface VideoBlockData {
+    url: string;
+    caption?: string;
+    autoplay?: boolean;
+    muted?: boolean;
+    controls?: boolean;
+    stretched?: boolean;
+}
+
+interface LinkToolBlockData {
+    link: string;
+    meta?: {
+        title?: string;
+        description?: string;
+        image?: { url?: string };
+        site_name?: string;
+    };
+}
+
+const getBlockTextStyle = (block: any): React.CSSProperties | undefined => {
+    const alignment = block?.tunes?.alignment?.alignment;
+    if (!alignment) return undefined;
+
+    return {
+        textAlign: alignment,
+        // In this project, right-aligned blocks are also used for RTL copy.
+        direction: alignment === 'right' ? 'rtl' : 'ltr',
+    };
+};
+
 export const ArticleBlockRenderer = ({ block }: { block: any }) => {
     switch (block.type) {
         case 'paragraph':
             return (
-                <p dangerouslySetInnerHTML={{ __html: block.data.text }} />
+                <p style={getBlockTextStyle(block)} dangerouslySetInnerHTML={{ __html: block.data.text }} />
             );
 
         case 'header':
             const level = block.data.level || 2;
             const HeaderTag = `h${level}` as React.ElementType;
-            return <HeaderTag dangerouslySetInnerHTML={{ __html: block.data.text }} />;
+            return <HeaderTag style={getBlockTextStyle(block)} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
 
         case 'image':
             const normalizeCssValue = (value: string | undefined): string | undefined => {
@@ -60,7 +93,7 @@ export const ArticleBlockRenderer = ({ block }: { block: any }) => {
         case 'list':
             const ListTag = block.data.style === 'ordered' ? 'ol' : 'ul';
             return (
-                <ListTag>
+                <ListTag style={getBlockTextStyle(block)}>
                     {block.data.items.map((item: string, i: number) => (
                         <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
                     ))}
@@ -69,7 +102,7 @@ export const ArticleBlockRenderer = ({ block }: { block: any }) => {
 
         case 'quote':
             return (
-                <blockquote>
+                <blockquote style={getBlockTextStyle(block)}>
                     <p dangerouslySetInnerHTML={{ __html: block.data.text }} />
                     {block.data.caption && (
                         <cite>— {block.data.caption}</cite>
@@ -145,6 +178,64 @@ export const ArticleBlockRenderer = ({ block }: { block: any }) => {
             return (
                 <div style={{ height: block.data.height + 'px' }} aria-hidden="true" />
             );
+
+        case 'video': {
+            const data: VideoBlockData = block.data || {};
+            if (!data.url) return null;
+
+            const isYouTube = /youtu\.be|youtube\.com/.test(data.url);
+            const isVimeo = /vimeo\.com/.test(data.url);
+
+            // Match admin-style: centered, responsive player with optional caption
+            return (
+                <figure className="my-8">
+                    <div className="relative w-full overflow-hidden rounded-lg bg-black" style={{ paddingTop: '56.25%' }}>
+                        {isYouTube || isVimeo ? (
+                            <iframe
+                                src={data.url}
+                                title={data.caption || 'Embedded video'}
+                                className="absolute inset-0 h-full w-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        ) : (
+                            <video
+                                src={data.url}
+                                className="absolute inset-0 h-full w-full"
+                                controls={data.controls !== false}
+                                autoPlay={!!data.autoplay}
+                                muted={!!data.muted}
+                            />
+                        )}
+                    </div>
+                    {data.caption && (
+                        <figcaption className="text-center text-sm text-muted-foreground mt-2">
+                            {data.caption}
+                        </figcaption>
+                    )}
+                </figure>
+            );
+        }
+
+        case 'linkTool': {
+            const data: LinkToolBlockData = block.data || {};
+            if (!data.link) return null;
+
+            const label = data.meta?.title || data.link;
+
+            return (
+                <p className="my-4">
+                    <a
+                        href={data.link}
+                        className="text-primary underline underline-offset-2 break-words"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {label}
+                    </a>
+                </p>
+            );
+        }
 
         default:
             console.warn('Unknown block type:', block.type);

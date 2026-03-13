@@ -48,6 +48,9 @@ export default class Spacer {
         controls.style.borderRadius = '4px';
         controls.style.zIndex = '10';
         controls.style.fontSize = '12px';
+        controls.style.opacity = '0';
+        controls.style.pointerEvents = 'none';
+        controls.style.transition = 'opacity 0.15s ease';
 
         const label = document.createElement('span');
         label.innerText = 'Gap:';
@@ -73,13 +76,28 @@ export default class Spacer {
         controls.appendChild(input);
         controls.appendChild(valueDisplay);
 
+        const showControls = () => {
+            controls.style.opacity = '1';
+            controls.style.pointerEvents = 'auto';
+        };
+
+        const hideControls = () => {
+            controls.style.opacity = '0';
+            controls.style.pointerEvents = 'none';
+        };
+
+        this.wrapper.addEventListener('mouseenter', showControls);
+        this.wrapper.addEventListener('mouseleave', hideControls);
+        this.wrapper.addEventListener('focusin', showControls);
+        this.wrapper.addEventListener('focusout', hideControls);
+
         this.wrapper.appendChild(controls);
         this.wrapper.appendChild(spacerVisual);
 
         return this.wrapper;
     }
 
-    save(blockContent: HTMLElement) {
+    save() {
         return {
             height: this.data.height,
         };

@@ -17,7 +17,6 @@ export const loadEditorTools = async () => {
         TableModule,
         SimpleVideoModule,
         RawToolModule,
-        ColorPluginModule,
         FontSizeModule,
         AlignmentTuneModule,
         SpacerModule,
@@ -38,12 +37,7 @@ export const loadEditorTools = async () => {
         import('@editorjs/table'),
         import('simple-video-editorjs'),
         import('@editorjs/raw'),
-        import('editorjs-text-color-plugin'),
-        // @ts-ignore
-        import('editorjs-font-size').catch(err => {
-            console.error('Failed to load editorjs-font-size:', err);
-            return null;
-        }),
+        import('@/components/editor-tools/FontSizeInline'),
         // @ts-ignore
         import('editorjs-text-alignment-blocktune').catch(err => {
             console.error('Failed to load editorjs-text-alignment-blocktune:', err);
@@ -69,30 +63,31 @@ export const loadEditorTools = async () => {
     const Table = safeImport(TableModule, 'Table');
     const SimpleVideo = safeImport(SimpleVideoModule, 'SimpleVideo');
     const RawTool = safeImport(RawToolModule, 'RawTool');
-    const ColorPlugin = safeImport(ColorPluginModule, 'ColorPlugin');
     const AlignmentTune = safeImport(AlignmentTuneModule, 'AlignmentTune');
     const Spacer = safeImport(SpacerModule, 'Spacer');
     const Columns = safeImport(ColumnsModule, 'Columns');
     const ImageTune = safeImport(ImageTuneModule, 'ImageTune');
-
-    // Special handling for FontSize which uses a named export
-    // @ts-ignore
-    let FontSize = safeImport(FontSizeModule, 'FontSize');
-    if (FontSize && typeof FontSize === 'object' && FontSize.FontSize) {
-        FontSize = FontSize.FontSize;
-    }
+    const FontSize = safeImport(FontSizeModule, 'FontSizeInline');
 
     // Debug definitions
     console.log('Editor Tools Loaded:', {
         FontSizeType: typeof FontSize,
         FontSizeIsClass: FontSize?.toString().startsWith('class'),
-        ColorType: typeof ColorPlugin,
     });
+
+    const inlineToolbarTools = [
+        'bold',
+        'italic',
+        'link',
+        Marker ? 'marker' : null,
+        InlineCode ? 'inlineCode' : null,
+        FontSize ? 'fontSize' : null,
+    ].filter(Boolean) as string[];
 
     const tools = {
         paragraph: Paragraph ? {
             class: Paragraph as any,
-            inlineToolbar: true,
+            inlineToolbar: inlineToolbarTools,
             tunes: AlignmentTune ? ['alignment'] : [],
             config: {
                 placeholder: 'Type forward slash / to open menu',
@@ -106,12 +101,12 @@ export const loadEditorTools = async () => {
                 defaultLevel: 2,
             },
             shortcut: 'CMD+SHIFT+H',
-            inlineToolbar: true,
+            inlineToolbar: inlineToolbarTools,
             tunes: AlignmentTune ? ['alignment'] : [],
         } : undefined,
         list: List ? {
             class: List as any,
-            inlineToolbar: true,
+            inlineToolbar: inlineToolbarTools,
             tunes: AlignmentTune ? ['alignment'] : [],
             config: {
                 defaultStyle: 'unordered',
@@ -119,7 +114,7 @@ export const loadEditorTools = async () => {
         } : undefined,
         quote: Quote ? {
             class: Quote as any,
-            inlineToolbar: true,
+            inlineToolbar: inlineToolbarTools,
             shortcut: 'CMD+SHIFT+O',
             tunes: AlignmentTune ? ['alignment'] : [],
             config: {
@@ -142,10 +137,6 @@ export const loadEditorTools = async () => {
         image: ImageTool ? {
             class: ImageTool as any,
             tunes: ImageTune ? ['imageTune'] : [], // Add custom resizing tune
-            // import { API_ENDPOINTS } from '@/services/endpoints'; // Importing dynamically below is safer for config object construction if possible, but here we can just replace string interpolation
-
-            // ... actually I need to import it first. 
-            // Replacing the logic:
             config: {
                 field: 'image',
                 types: 'image/*',
@@ -187,24 +178,9 @@ export const loadEditorTools = async () => {
                 placeholder: 'Paste HTML code here (e.g., YouTube iframe embed code)...',
             }
         } : undefined,
-        textColor: ColorPlugin ? {
-            class: ColorPlugin as any,
-            inlineToolbar: true,
-            config: {
-                colorCollections: [
-                    '#FF1300', '#EC7878', '#9C27B0', '#673AB7', '#3F51B5', '#0070FF', '#03A9F4', '#00BCD4', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#111111', '#FFFFFF'
-                ],
-                defaultColor: '#111111',
-                type: 'text',
-                customPicker: true
-            }
-        } : undefined,
         fontSize: FontSize ? {
             class: FontSize as any,
             inlineToolbar: true,
-            config: {
-                fontSizeScheme: [10, 12, 14, 16, 18, 20, 24, 28, 30, 36, 48, 60, 72]
-            }
         } : undefined,
         alignment: AlignmentTune ? {
             class: AlignmentTune as any,
@@ -223,8 +199,14 @@ export const loadEditorTools = async () => {
             config: {
                 EditorJsLibrary: EditorJS, // Pass EditorJS class for nested editors
                 tools: {
-                    paragraph: Paragraph ? { class: Paragraph } : undefined,
-                    header: Header ? { class: Header } : undefined,
+                    paragraph: Paragraph ? {
+                        class: Paragraph,
+                        inlineToolbar: inlineToolbarTools,
+                    } : undefined,
+                    header: Header ? {
+                        class: Header,
+                        inlineToolbar: inlineToolbarTools,
+                    } : undefined,
                     image: ImageTool ? {
                         class: ImageTool,
                         config: {
@@ -235,7 +217,10 @@ export const loadEditorTools = async () => {
                             },
                         }
                     } : undefined,
-                    list: List ? { class: List } : undefined,
+                    list: List ? {
+                        class: List,
+                        inlineToolbar: inlineToolbarTools,
+                    } : undefined,
                 }
             }
         } : undefined,
